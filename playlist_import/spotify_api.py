@@ -1,4 +1,7 @@
 import requests
+import base64
+import urllib.parse
+import time
 from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
@@ -11,11 +14,9 @@ class Spotify_API:
     def __init__ (self, client_id, client_secret):
         self.client_id = client_id
         self.client_secret = client_secret
-        self.headers = {'Authorization': 'Bearer '  + self.client_secret}
-
-        print(self.headers)
-
         self.create_session()
+
+        self.generate_access_token()
 
     def create_session(self, max_retries = 3, backoff_factor = 0.5):
         session = requests.session()
@@ -23,17 +24,37 @@ class Spotify_API:
         session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session = session
 
-    def generate_
+    def generate_token(self):
+        http_endpoint = 'https://accounts.spotify.com/authorize?client_id={}&response_type={}&redirect_uri={}'.format(self.client_id, 'code',urllib.parse.quote_plus('http://google.com'))
+        print(http_endpoint)
+        r = self.session.get(http_endpoint)
+        print(r)
+        self.headers = r
+
+    def generate_access_token(self):
+        client_creds = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
+
+        data = {
+            "grant_type" : "client_credentials"
+        }
+
+        headers = {
+            "Authorization" : f"Basic {client_creds}"
+        }
+
+        r = self.session.post("https://accounts.spotify.com/api/token", data = data, headers = headers)
+        access_json = r.json()
+        self.headers = {'Authorization': 'Bearer ' + access_json['access_token']}
 
     def http_request(self, http_endpoint, headers):
         r = self.session.get(http_endpoint, headers = headers)
         return r.json()
 
-
-    def search_song (self, song):
-        http_endpoint = SPOTIFY_API_ENDPOINT + 'search?q={}'
+    def search_item (self, item, i_type):
+        http_endpoint = SPOTIFY_API_ENDPOINT + 'search?q={}&type={}'.format(item.replace(' ','%20'),i_type)
         response = self.http_request(http_endpoint, self.headers)
         return response
 
 spot_api = Spotify_API(CLIENT_ID, CLIENT_SECRET)
-print(spot_api.search_song('Lonely'))
+print(spot_api.search_item('Savoy & Bright Lights - The Wolf (Savoy Live Version)', 'track'))
+#spot_api.generate_token()
