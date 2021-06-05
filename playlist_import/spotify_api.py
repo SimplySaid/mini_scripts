@@ -7,8 +7,8 @@ from requests.adapters import HTTPAdapter
 
 SPOTIFY_API_ENDPOINT = 'https://api.spotify.com/v1/'
 
-CLIENT_ID = '738964632da7447a95a408902287a69e'
-CLIENT_SECRET = '1139819a7d1b4f809986261bde0285b3'
+CLIENT_ID = ''
+CLIENT_SECRET = ''
 
 class Spotify_API:
     def __init__ (self, client_id, client_secret):
@@ -24,7 +24,11 @@ class Spotify_API:
         session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session = session
 
-    def generate_token(self):
+    def http_request(self, http_endpoint, headers):
+        r = self.session.get(http_endpoint, headers = headers)
+        return r.json()
+
+    def generate_OAUTH_token(self):
         http_endpoint = 'https://accounts.spotify.com/authorize?client_id={}&response_type={}&redirect_uri={}'.format(self.client_id, 'code',urllib.parse.quote_plus('http://google.com'))
         print(http_endpoint)
         r = self.session.get(http_endpoint)
@@ -45,10 +49,6 @@ class Spotify_API:
         r = self.session.post("https://accounts.spotify.com/api/token", data = data, headers = headers)
         access_json = r.json()
         self.headers = {'Authorization': 'Bearer ' + access_json['access_token']}
-
-    def http_request(self, http_endpoint, headers):
-        r = self.session.get(http_endpoint, headers = headers)
-        return r.json()
 
     def search_item (self, item, i_type):
         http_endpoint = SPOTIFY_API_ENDPOINT + 'search?q={}&type={}'.format(item.replace(' ','%20'),i_type)
